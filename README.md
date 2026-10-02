@@ -1,7 +1,7 @@
 # Flight Operations Calendar
 
 A shared month calendar of flight operations: each booking has a mission type
-(with its own colour), two pilots, start and end times, and notes. Each day is
+(with its own colour), up to two pilots, start and end times, and notes. Each day is
 drawn as a 24-hour strip with the night hours (18:00–06:00) shaded, so a
 booking's bar shows its exact times across midnight and across days. On a
 phone the **List** view shows the month as a list of bookings by day.
@@ -21,7 +21,9 @@ typed once per device and remembered: there's no login and no timeout.
 ## Rules the calendar keeps
 
 - Every booking needs a mission type and an end later than its start.
-- Every mission type except **Maintenance** needs two different pilots.
+- Pilots are optional, so a booking can go in before anyone knows who's
+  flying it; the card shows *Pilots TBC* until they're chosen. The two
+  pilots on a booking must be different people.
 - A pilot already on an overlapping booking is pointed out in the form, but
   not refused.
 - A pilot or mission type that's on a booking can't be removed until those
@@ -72,4 +74,4 @@ branch*, root). `.nojekyll` keeps the files out of Jekyll.
 Bump the version on every functional change, in all four places at once: the
 `<title>`, the `.version` span, `CACHE` in `sw.js`, and *Current* below.
 
-Current: **v1.0**.
+Current: **v1.1**.

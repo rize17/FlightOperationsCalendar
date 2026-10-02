@@ -102,7 +102,6 @@ async function save(env, cal) {
 const text = (v, max) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 const sameName = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
 const byName = (a, b) => a.name.localeCompare(b.name);
-const isMaintenance = type => !!type && type.name.trim().toLowerCase() === "maintenance";
 
 /* A real calendar time, not just the right shape: 2026-02-30 is refused. */
 function validTime(v) {
@@ -124,7 +123,8 @@ function cleanBooking(body, id, cal) {
   const p2 = typeof body.pilot2Id === "string" ? body.pilot2Id : "";
   for (const p of [p1, p2]) if (p && !cal.pilots.some(x => x.id === p)) return "that pilot is no longer on the list";
   if (p1 && p1 === p2) return "the two pilots must be different people";
-  if (!isMaintenance(type) && (!p1 || !p2)) return "choose two pilots (only Maintenance can go without)";
+  // Either pilot may be left blank: a booking is often made before anyone
+  // knows who's flying it.
 
   return {
     id,

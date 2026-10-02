@@ -1,6 +1,6 @@
 # Flight Operations Calendar
 
-A shared month calendar of flight bookings (mission type, two pilots, times,
+A shared month calendar of flight bookings (mission type, up to two pilots, times,
 notes). It replaces a ChatGPT-built Next.js/D1 site with the same layout; this
 repo shares no code with that or with the other offshore tools. See README.md
 for the Cloudflare setup.
@@ -36,9 +36,10 @@ is deployed separately by Workers Builds from the same repo.
   local time.
 - **The worker is the judge of a booking.** The page checks the same rules
   first for a friendly message, but the worker refuses anything invalid: real
-  dates, end after start, a known mission type, and two different known pilots
-  unless the type is named Maintenance. A pilot double-booked is only a
-  warning in the form, never a refusal.
+  dates, end after start, a known mission type, and pilots that are on the
+  list and not the same person twice. Pilots are optional on every booking
+  (often nobody's chosen yet); don't make them required again. A pilot
+  double-booked is only a warning in the form, never a refusal.
 - **Month layout is in `layoutWeek()`.** A bar spans the booking's exact
   times; a fixed 254px card sits centred under it. Bars and cards are packed
   into lanes separately and the week row grows to fit. Card positions depend

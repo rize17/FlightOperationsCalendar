@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Flight Operations v1.0</title>
+<title>Flight Operations v1.1</title>
 
 <!-- Add-to-Home-Screen support -->
 <link rel="manifest" href="manifest.webmanifest">
@@ -281,7 +281,7 @@
 <header class="topbar">
   <div class="brand">
     <span class="brand-mark"><span data-icon="calendar"></span></span>
-    <div><strong>Flight Operations</strong><small>Calendar<span class="version">v1.0</span></small></div>
+    <div><strong>Flight Operations</strong><small>Calendar<span class="version">v1.1</span></small></div>
   </div>
   <div class="header-right">
     <span class="timezone">Times shown in SAST (UTC+2)</span>
@@ -359,8 +359,8 @@
       <label>Ends<input type="datetime-local" id="fEnd" required></label>
     </div>
     <div class="pair">
-      <label>Pilot 1 <span class="optional" data-opt hidden>optional</span><select id="fP1"></select></label>
-      <label>Pilot 2 <span class="optional" data-opt hidden>optional</span><select id="fP2"></select></label>
+      <label>Pilot 1 <span class="optional">optional</span><select id="fP1"></select></label>
+      <label>Pilot 2 <span class="optional">optional</span><select id="fP2"></select></label>
     </div>
     <p class="note" id="fNote"></p>
     <label>Booking name <span class="optional">optional</span><input type="text" id="fName" maxlength="160" placeholder="Uses the mission type if left blank"></label>
@@ -527,7 +527,7 @@ const pilotName = id => (cal.pilots.find(p => p.id === id) || {}).name || "Unkno
 const isMaint = typeId => { const t = cal && cal.types.find(x => x.id === typeId); return !!t && t.name.trim().toLowerCase() === "maintenance"; };
 function pilotSummary(b) {
   const names = [b.pilot1Id, b.pilot2Id].filter(Boolean).map(pilotName);
-  return names.length ? names.join(" · ") : isMaint(b.typeId) ? "No pilots required" : "Pilots unassigned";
+  return names.length ? names.join(" · ") : isMaint(b.typeId) ? "No pilots required" : "Pilots TBC";
 }
 function span(b) {
   return sameDay(b.start, b.end)
@@ -864,14 +864,13 @@ function fillSelect(sel, items, blank, value) {
 }
 
 function syncPilots() {
-  const maint = isMaint($("fType").value);
+  const blank = isMaint($("fType").value) ? "No pilot" : "Not decided yet";
   const p1 = $("fP1").value, p2 = $("fP2").value;
-  fillSelect($("fP1"), cal.pilots, maint ? "No pilot" : "Choose pilot", p1);
-  fillSelect($("fP2"), cal.pilots, maint ? "No pilot" : "Choose pilot", p2);
+  fillSelect($("fP1"), cal.pilots, blank, p1);
+  fillSelect($("fP2"), cal.pilots, blank, p2);
   // Each list greys out the pilot already picked in the other.
   [...$("fP1").options].forEach(o => { o.disabled = !!o.value && o.value === p2; });
   [...$("fP2").options].forEach(o => { o.disabled = !!o.value && o.value === p1; });
-  document.querySelectorAll("[data-opt]").forEach(s => { s.hidden = !maint; });
   checkClash();
 }
 
@@ -880,8 +879,6 @@ function syncPilots() {
 function checkClash() {
   const start = $("fStart").value, end = $("fEnd").value;
   const notes = [];
-  if (!isMaint($("fType").value) && cal.pilots.length < 2)
-    notes.push("Add at least two pilots in Manage lists first. Maintenance can be saved without pilots.");
   if (start && end && end > start) {
     for (const pid of [$("fP1").value, $("fP2").value].filter(Boolean)) {
       const other = cal.bookings.find(b => (!editing || b.id !== editing.id) && b.start < end && b.end > start && (b.pilot1Id === pid || b.pilot2Id === pid));
@@ -938,7 +935,6 @@ $("bookingForm").addEventListener("submit", async e => {
   if (!body.start || !body.end) return void (msg.textContent = "Enter a start and an end.");
   if (body.end <= body.start) return void (msg.textContent = "The end must be later than the start.");
   if (body.pilot1Id && body.pilot1Id === body.pilot2Id) return void (msg.textContent = "The two pilots must be different people.");
-  if (!isMaint(body.typeId) && (!body.pilot1Id || !body.pilot2Id)) return void (msg.textContent = "Choose two pilots. Only Maintenance can go without.");
 
   const id = editing ? editing.id : newId();
   $("fSave").disabled = true;

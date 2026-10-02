@@ -1,7 +1,7 @@
 // Offline shell cache, so the page opens with no signal. The calendar comes
 // from the API (another origin) and is left to the page, which keeps its own
 // copy of the last calendar it saw.
-const CACHE = "flightops-v1.0";
+const CACHE = "flightops-v1.1";
 const ASSETS = ["./index.html", "./manifest.webmanifest", "./favicon.svg", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
