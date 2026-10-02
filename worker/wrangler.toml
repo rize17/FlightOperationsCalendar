@@ -1,0 +1,11 @@
+# Deploy config for the API worker, for a Workers Build rooted at worker/.
+# Keep in step with ../wrangler.toml. The keys stay dashboard secrets -
+# never add EDIT_KEY or VIEW_KEY to this file.
+
+name = "flightops-api"
+main = "flightops-api.js"
+compatibility_date = "2026-09-01"
+
+[[kv_namespaces]]
+binding = "FLIGHTOPS"
+id = "PASTE_KV_NAMESPACE_ID_HERE"

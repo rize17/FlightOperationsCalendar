@@ -1,0 +1,21 @@
+# Deploy config for the API worker, at the REPO ROOT on purpose (the same
+# arrangement as Ship ETA and Offshore Tools). Workers Builds pointed at the
+# repo root with no config here would find index.html and deploy the page as
+# a static site instead of the worker. Naming main here makes the build
+# deploy the script whichever directory it starts from; worker/wrangler.toml
+# says the same thing for a build rooted at worker/.
+#
+# No [assets] block: this worker serves no files, only JSON. The page is on
+# GitHub Pages.
+#
+# The KV id is an identifier, not a credential - safe in the repo. The keys
+# are NOT here: EDIT_KEY and VIEW_KEY are dashboard secrets, which a deploy
+# leaves alone. Never add them to this file.
+
+name = "flightops-api"
+main = "worker/flightops-api.js"
+compatibility_date = "2026-09-01"
+
+[[kv_namespaces]]
+binding = "FLIGHTOPS"
+id = "PASTE_KV_NAMESPACE_ID_HERE"

@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flight Operations v1.0</title>
+
+<!-- Add-to-Home-Screen support -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#143c49">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Flight Ops">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<style>
+  :root {
+    --bg: #f5f8f8;
+    --panel: #ffffff;
+    --edge: #d8e2e3;
+    --edge-soft: #e3e9ea;
+    --ink: #172e38;
+    --ink-2: #38545d;
+    --ink-dim: #667d84;
+    --ink-faint: #87999e;
+    --navy: #143c49;
+    --navy-2: #26505c;
+    --amber: #eab66e;
+    --amber-2: #f1c786;
+    --ring: #5a98a0;
+    --err: #a33939;
+    --err-bg: #fff0ee;
+    --warn: #685d42;
+    --warn-bg: #fff6e7;
+    --night: rgba(36, 85, 105, .075);
+    --night-hover: rgba(36, 85, 105, .11);
+    font-size: 16px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, Arial, sans-serif;
+    line-height: 1.4;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  [hidden] { display: none !important; }
+  svg.i { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    min-height: 76px; background: var(--navy); color: #fff;
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: max(env(safe-area-inset-top), 10px) clamp(16px, 3vw, 52px) 10px;
+    border-bottom: 3px solid var(--amber);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .brand-mark {
+    display: grid; place-items: center; width: 40px; height: 40px; flex: none;
+    border: 1px solid #87a3a8; border-radius: 9px; color: var(--amber);
+  }
+  .brand-mark svg.i { width: 21px; height: 21px; }
+  .brand strong { display: block; font-size: 17px; line-height: 1.22; letter-spacing: .01em; white-space: nowrap; }
+  .brand small { color: #b9d0d2; font-size: 13px; }
+  .brand .version { color: #87a3a8; font-size: 11px; margin-left: 4px; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .timezone { color: #c4d7d9; font-size: 13px; margin-right: 10px; white-space: nowrap; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    height: 39px; padding: 0 15px; border-radius: 7px; font-size: 15px; font-weight: 600;
+    background: var(--navy); color: #fff; border: 1px solid var(--navy); white-space: nowrap;
+  }
+  .btn:hover { background: var(--navy-2); border-color: var(--navy-2); }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn.ghost { background: #fff; color: #24414a; border-color: #d2dfe1; }
+  .btn.ghost:hover { background: #edf3f3; }
+  .btn.danger { background: #fff; color: #a33d3d; border-color: #e3c4c4; }
+  .btn.danger:hover { background: #fdf1f1; }
+  .btn.icon { width: 39px; padding: 0; }
+  .btn.small { height: 32px; padding: 0 10px; font-size: 14px; }
+  .btn.small.icon { width: 32px; }
+  .btn.plain { background: transparent; border-color: transparent; color: #47717d; }
+  .btn.plain:hover { background: #edf3f3; }
+  .btn.amber { background: var(--amber); border-color: var(--amber); color: #163540; font-weight: 700; }
+  .btn.amber:hover { background: var(--amber-2); border-color: var(--amber-2); }
+  .btn.outline-dark { background: transparent; border-color: #6e9099; color: #e5f0f0; }
+  .btn.outline-dark:hover { background: var(--navy-2); color: #fff; }
+  .btn:focus-visible, .seg button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+  /* ---------- workspace ---------- */
+  .workspace { max-width: 1660px; margin: auto; padding: 28px clamp(16px, 2.6vw, 44px) calc(env(safe-area-inset-bottom) + 24px); }
+  .toolbar { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 21px; }
+  .eyebrow { font-size: 11px; font-weight: 800; color: #68828a; letter-spacing: .15em; margin-bottom: 7px; }
+  h1 { margin: 0; font-size: clamp(25px, 2.4vw, 34px); line-height: 1.1; letter-spacing: -.035em; font-weight: 700; }
+  .nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .seg { display: inline-flex; border: 1px solid #d2dfe1; border-radius: 7px; overflow: hidden; background: #fff; height: 39px; }
+  .seg button { border: 0; background: transparent; padding: 0 13px; font-size: 14px; font-weight: 600; color: #24414a; }
+  .seg button + button { border-left: 1px solid #d2dfe1; }
+  .seg button[aria-pressed="true"] { background: var(--navy); color: #fff; }
+
+  .status { margin: -8px 0 14px; font-size: 13px; color: var(--ink-dim); min-height: 0; }
+  .status:empty { display: none; }
+  .status.err { margin: 0 0 16px; padding: 12px 15px; border-radius: 7px; color: #8b3333; background: var(--err-bg); }
+
+  /* ---------- month grid ---------- */
+  .calendar-scroll {
+    overflow-x: auto; background: #fff; border: 1px solid var(--edge);
+    border-radius: 12px; box-shadow: 0 8px 30px rgba(25, 62, 73, .05);
+  }
+  .calendar { min-width: 760px; }
+  .weekday-row { display: grid; grid-template-columns: repeat(7, 1fr); background: #f0f5f5; border-bottom: 1px solid var(--edge); }
+  .weekday-row > div {
+    padding: 13px 14px; color: #566d76; font-size: 13px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .065em; border-right: 1px solid var(--edge);
+  }
+  .weekday-row > div:last-child { border-right: 0; }
+  .week { position: relative; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-bottom: 1px solid var(--edge); }
+  .week:last-child { border-bottom: 0; }
+
+  /* Each day is a 24-hour strip, left to right: 00-06 and 18-24 get a quiet
+     night tint, so a bar's position inside the day reads as a time. */
+  .day {
+    position: relative; border: 0; border-right: 1px solid var(--edge-soft);
+    background: linear-gradient(90deg, var(--night) 0 25%, transparent 25% 75%, var(--night) 75% 100%), #fff;
+    padding: 0; color: #2d4750; font-size: 14px; font-weight: 600; text-align: left;
+  }
+  .day:last-of-type { border-right: 0; }
+  .day.outside { background: linear-gradient(90deg, var(--night) 0 25%, transparent 25% 75%, var(--night) 75% 100%), #fafbfb; color: #829298; }
+  .day.can-add:hover { background: linear-gradient(90deg, var(--night-hover) 0 25%, transparent 25% 75%, var(--night-hover) 75% 100%), #f2f7f7; }
+  .day:not(.can-add) { cursor: default; }
+  .day:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+  .day-number { position: absolute; top: 12px; left: 14px; z-index: 1; line-height: 1.2; }
+  .day.today .day-number { background: var(--navy); color: #fff; padding: 5px 7px; margin: -5px -7px; border-radius: 6px; }
+  .day-plus { display: none; position: absolute; top: 9px; right: 12px; color: #567b82; font-size: 19px; font-weight: 400; }
+  .day.can-add:hover .day-plus, .day.can-add:focus-visible .day-plus { display: block; }
+
+  .events { position: absolute; left: 0; right: 0; top: 48px; bottom: 0; pointer-events: none; }
+  /* The bar carries the exact time span across the day strips; the card
+     beside it keeps the details readable however short the booking is. */
+  .bar {
+    position: absolute; height: 24px; min-width: 4px; z-index: 2;
+    display: flex; align-items: center; justify-content: space-between; gap: 3px;
+    padding: 0 3px; border-radius: 5px; background: var(--c, #839ca3);
+  }
+  .bar span {
+    color: var(--navy); background: rgba(255, 255, 255, .94); padding: 1px 3px; border-radius: 3px;
+    font-size: 11px; line-height: 14px; font-weight: 700; white-space: nowrap;
+  }
+  .bar .t-end { margin-left: auto; }
+  .bar.compact { height: 40px; flex-direction: column; align-items: stretch; justify-content: center; gap: 2px; padding: 2px 1px; }
+  .bar.compact span { padding: 0 2px; font-size: 10px; line-height: 15px; }
+  .bar.compact .t-start { align-self: flex-start; }
+  .bar.compact .t-end { align-self: flex-end; margin-left: 0; }
+
+  .card {
+    position: absolute; width: 254px; height: 68px; z-index: 3; pointer-events: auto;
+    display: flex; flex-direction: column; gap: 3px; overflow: hidden; padding: 6px 9px;
+    border: 1px solid var(--edge); border-left: 4px solid var(--c, #839ca3); border-radius: 7px;
+    background: #fff; color: #17333e; text-align: left; font-size: 13px; line-height: 1.15;
+    white-space: nowrap; box-shadow: 0 3px 10px rgba(20, 60, 73, .09);
+  }
+  .card strong { overflow: hidden; text-overflow: ellipsis; font-size: 14px; line-height: 1.2; }
+  .card span { overflow: hidden; text-overflow: ellipsis; }
+  .card .pilots { color: #5b7480; }
+  .card:hover, .card:focus-visible {
+    z-index: 5; border-color: #438292; border-left-color: var(--c, #438292);
+    box-shadow: 0 5px 16px rgba(20, 60, 73, .18); outline: 2px solid var(--navy); outline-offset: 1px;
+  }
+
+  /* ---------- list view ---------- */
+  .agenda { background: #fff; border: 1px solid var(--edge); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 30px rgba(25, 62, 73, .05); }
+  .agenda-day { display: grid; grid-template-columns: 64px 1fr; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--edge-soft); }
+  .agenda-day:last-child { border-bottom: 0; }
+  .agenda-date { padding-top: 4px; color: #566d76; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+  .agenda-date b { display: block; font-size: 22px; color: var(--ink); letter-spacing: -.02em; }
+  .agenda-day.today .agenda-date b { color: var(--navy); text-decoration: underline 3px var(--amber); text-underline-offset: 4px; }
+  .agenda-items { display: grid; gap: 8px; min-width: 0; }
+  .agenda .card { position: static; width: auto; height: auto; padding: 9px 11px; gap: 4px; white-space: normal; }
+  .agenda .card strong { white-space: nowrap; }
+  .empty { padding: 40px 16px; text-align: center; color: var(--ink-dim); }
+
+  .footer { color: var(--ink-dim); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px; margin: 17px 2px; font-size: 13px; }
+  .legend { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; flex: none; }
+  .swatch.night { background: #e8f0f3; border: 1px solid #bacdd3; }
+
+  /* ---------- key gate ---------- */
+  .gate {
+    max-width: 420px; margin: 10vh auto 0; text-align: center; background: #fff;
+    border: 1px solid var(--edge); border-radius: 14px; padding: 30px 24px;
+    box-shadow: 0 8px 30px rgba(25, 62, 73, .07);
+  }
+  .gate .mark { display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: 14px; background: var(--navy); color: var(--amber); }
+  .gate .mark svg.i { width: 28px; height: 28px; }
+  .gate h2 { margin: 14px 0 6px; font-size: 22px; letter-spacing: -.02em; }
+  .gate p { margin: 0 0 18px; color: var(--ink-dim); }
+  .gate .row { justify-content: center; }
+
+  /* ---------- forms & dialogs ---------- */
+  dialog {
+    width: min(520px, calc(100vw - 24px)); max-height: calc(100dvh - 24px);
+    border: 0; border-radius: 13px; padding: 26px; color: var(--ink); background: #fff;
+    box-shadow: 0 20px 60px rgba(10, 35, 45, .3);
+  }
+  dialog.wide { width: min(850px, calc(100vw - 24px)); }
+  dialog::backdrop { background: rgba(15, 35, 45, .45); }
+  dialog h2 { margin: 0 34px 4px 0; font-size: 22px; letter-spacing: -.02em; line-height: 1.2; overflow-wrap: anywhere; }
+  .sub { margin: 0 0 14px; color: var(--ink-dim); font-size: 14px; display: flex; align-items: center; gap: 8px; }
+  .x { position: absolute; top: 14px; right: 14px; }
+
+  .form { display: grid; gap: 15px; margin-top: 8px; }
+  .form label, .field-label { display: grid; gap: 6px; font-size: 14px; font-weight: 700; color: var(--ink-2); }
+  .optional { color: var(--ink-faint); font-weight: 400; }
+  input[type=text], input[type=password], input[type=datetime-local], select, textarea {
+    width: 100%; min-width: 0; border: 1px solid #cfdbdc; background: #fff; border-radius: 6px;
+    font-size: 15px; color: #203e48; padding: 10px 11px; font-weight: 400;
+  }
+  input[type=text], input[type=password], input[type=datetime-local], select { height: 44px; }
+  textarea { resize: vertical; min-height: 70px; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--ring); outline-offset: 0; border-color: var(--ring); }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; }
+  .row .spacer { flex: 1; }
+  .actions { margin-top: 6px; justify-content: flex-end; }
+  .msg { margin: 0; font-size: 14px; }
+  .msg:empty { display: none; }
+  .msg.err { color: var(--err); }
+  .note { margin: 0; color: var(--warn); background: var(--warn-bg); padding: 10px 12px; border-radius: 5px; font-size: 13px; }
+  .note:empty { display: none; }
+
+  .detail { display: grid; gap: 16px; padding: 8px 0 18px; }
+  .detail > div { display: flex; gap: 12px; align-items: flex-start; color: #47717d; }
+  .detail > div > span { display: grid; gap: 4px; }
+  .detail small { font-size: 11px; letter-spacing: .11em; color: var(--ink-faint); font-weight: 800; }
+  .detail strong { font-weight: 600; color: #263e47; font-size: 15px; }
+  .detail p { border-top: 1px solid #e2e9e9; padding-top: 14px; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .tz { font-size: 13px; color: #778e93; }
+
+  .manage { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 8px; }
+  .manage section { min-width: 0; }
+  .manage h3 { font-size: 17px; margin: 0 0 13px; }
+  .manage form { display: flex; align-items: center; gap: 7px; min-width: 0; }
+  .manage form input[type=text] { height: 38px; font-size: 14px; }
+  .manage form .btn { height: 38px; }
+  .manage ul { list-style: none; margin: 15px 0 0; padding: 0; border-top: 1px solid #e1e9e9; }
+  .manage li { min-height: 50px; padding: 6px 2px; border-bottom: 1px solid #e1e9e9; display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 14px; }
+  .manage li > span { min-width: 0; overflow-wrap: anywhere; display: inline-flex; align-items: center; gap: 10px; }
+  .manage li .tools { display: flex; gap: 2px; flex: none; }
+  input[type=color] { flex: none; width: 38px; height: 38px; padding: 2px; border: 1px solid #cfdbdc; border-radius: 5px; background: #fff; cursor: pointer; }
+  .access b { color: var(--navy); }
+
+  @media (max-width: 900px) {
+    .weekday-row > div { padding: 12px 9px; }
+    .wd-long { display: none; }
+  }
+  @media (min-width: 901px) { .wd-short { display: none; } }
+  @media (max-width: 760px) {
+    .timezone { display: none; }
+    .manage { grid-template-columns: 1fr; gap: 26px; }
+  }
+  @media (max-width: 620px) {
+    .topbar { min-height: 64px; }
+    .brand strong { font-size: 15px; }
+    .brand-mark { width: 36px; height: 36px; }
+    .header-right { gap: 6px; }
+    .header-right .label { display: none; }
+    .header-right .btn { width: 39px; padding: 0; }
+    .workspace { padding-top: 20px; }
+    .toolbar { align-items: flex-start; }
+    .pair { grid-template-columns: 1fr; }
+    dialog { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark"><span data-icon="calendar"></span></span>
+    <div><strong>Flight Operations</strong><small>Calendar<span class="version">v1.0</span></small></div>
+  </div>
+  <div class="header-right">
+    <span class="timezone">Times shown in SAST (UTC+2)</span>
+    <button class="btn outline-dark" id="openManage" type="button" title="Pilots and mission types" hidden><span data-icon="users"></span><span class="label">Manage lists</span></button>
+    <button class="btn amber" id="openNew" type="button" title="New booking" hidden><span data-icon="plus"></span><span class="label">New booking</span></button>
+    <button class="btn outline-dark icon" id="openSettings" type="button" title="Settings" aria-label="Settings" hidden><span data-icon="gear"></span></button>
+  </div>
+</header>
+
+<main class="workspace">
+  <!-- Shown until a working key has been entered on this device -->
+  <section class="gate" id="gate" hidden>
+    <span class="mark"><span data-icon="key"></span></span>
+    <h2>Enter your key</h2>
+    <p>You only need to do this once on each device.</p>
+    <form id="gateForm" class="form">
+      <input type="password" id="gateKey" placeholder="Key" autocomplete="current-password" aria-label="Key">
+      <p class="msg err" id="gateMsg"></p>
+      <div class="row"><button class="btn" type="submit">Unlock</button></div>
+    </form>
+  </section>
+
+  <section id="app" hidden>
+    <div class="toolbar">
+      <div><div class="eyebrow">OPERATIONS SCHEDULE</div><h1 id="monthLabel"></h1></div>
+      <div class="nav">
+        <div class="seg" role="group" aria-label="View">
+          <button type="button" data-view="month" aria-pressed="true">Month</button>
+          <button type="button" data-view="list" aria-pressed="false">List</button>
+        </div>
+        <button class="btn ghost" type="button" id="today">Today</button>
+        <button class="btn ghost icon" type="button" id="prev" aria-label="Previous month"><span data-icon="left"></span></button>
+        <button class="btn ghost icon" type="button" id="next" aria-label="Next month"><span data-icon="right"></span></button>
+      </div>
+    </div>
+    <div class="status" id="status" role="status"></div>
+    <div class="calendar-scroll" id="monthView"><section class="calendar" id="calendar"></section></div>
+    <div class="agenda" id="listView" hidden></div>
+    <div class="footer">
+      <span class="legend" id="legend"></span>
+      <span id="hint"></span>
+    </div>
+  </section>
+</main>
+
+<!-- Booking details -->
+<dialog id="detail">
+  <button class="btn plain icon x" type="button" data-close aria-label="Close"><span data-icon="x"></span></button>
+  <h2 id="dTitle"></h2>
+  <p class="sub" id="dType"></p>
+  <div class="detail">
+    <div><span data-icon="clock"></span><span><small>START</small><strong id="dStart"></strong></span></div>
+    <div><span data-icon="clock"></span><span><small>END</small><strong id="dEnd"></strong></span></div>
+    <div><span data-icon="users"></span><span><small>PILOTS</small><strong id="dPilots"></strong></span></div>
+    <p id="dNotes"></p>
+    <span class="tz">South Africa time · SAST (UTC+2)</span>
+  </div>
+  <p class="msg err" id="dMsg"></p>
+  <div class="row" id="dActions">
+    <button class="btn danger" type="button" id="dDelete"><span data-icon="trash"></span>Delete</button>
+    <span class="spacer"></span>
+    <button class="btn" type="button" id="dEdit"><span data-icon="pencil"></span>Edit booking</button>
+  </div>
+</dialog>
+
+<!-- New / edit booking (edit key only) -->
+<dialog id="editor">
+  <button class="btn plain icon x" type="button" data-close aria-label="Close"><span data-icon="x"></span></button>
+  <h2 id="eTitle">New booking</h2>
+  <p class="sub">Enter times in South Africa time (SAST, UTC+2).</p>
+  <form class="form" id="bookingForm" novalidate>
+    <label>Mission type<select id="fType"></select></label>
+    <div class="pair">
+      <label>Starts<input type="datetime-local" id="fStart" required></label>
+      <label>Ends<input type="datetime-local" id="fEnd" required></label>
+    </div>
+    <div class="pair">
+      <label>Pilot 1 <span class="optional" data-opt hidden>optional</span><select id="fP1"></select></label>
+      <label>Pilot 2 <span class="optional" data-opt hidden>optional</span><select id="fP2"></select></label>
+    </div>
+    <p class="note" id="fNote"></p>
+    <label>Booking name <span class="optional">optional</span><input type="text" id="fName" maxlength="160" placeholder="Uses the mission type if left blank"></label>
+    <label>Notes <span class="optional">optional</span><textarea id="fNotes" maxlength="2000" rows="3" placeholder="Flight details or handover notes"></textarea></label>
+    <p class="msg err" id="fMsg"></p>
+    <div class="row actions">
+      <button class="btn ghost" type="button" data-close>Cancel</button>
+      <button class="btn" type="submit" id="fSave">Add booking</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Pilots & mission types (edit key only) -->
+<dialog id="manageDlg" class="wide">
+  <button class="btn plain icon x" type="button" data-close aria-label="Close"><span data-icon="x"></span></button>
+  <h2>Pilots &amp; mission types</h2>
+  <p class="sub">Add pilots and choose a colour for each mission type.</p>
+  <div class="manage">
+    <section>
+      <h3>Pilots</h3>
+      <form id="addPilot">
+        <input type="text" id="newPilot" placeholder="Pilot name" aria-label="New pilot name" maxlength="60">
+        <button class="btn" type="submit"><span data-icon="plus"></span>Add</button>
+      </form>
+      <ul id="pilotList"></ul>
+    </section>
+    <section>
+      <h3>Mission types</h3>
+      <form id="addType">
+        <input type="color" id="newColor" value="#4e8ca5" aria-label="New mission colour">
+        <input type="text" id="newType" placeholder="Mission type" aria-label="New mission type" maxlength="60">
+        <button class="btn" type="submit"><span data-icon="plus"></span>Add</button>
+      </form>
+      <ul id="typeList"></ul>
+    </section>
+  </div>
+  <p class="msg err" id="mMsg" style="margin-top:14px"></p>
+</dialog>
+
+<!-- Settings -->
+<dialog id="settings">
+  <button class="btn plain icon x" type="button" data-close aria-label="Close"><span data-icon="x"></span></button>
+  <h2>Settings</h2>
+  <p class="sub access" id="access"></p>
+  <form class="form" id="keyForm">
+    <label>Change key<input type="password" id="newKey" placeholder="New key" autocomplete="off"></label>
+    <p class="msg err" id="keyMsg"></p>
+    <div class="row">
+      <button class="btn danger" type="button" id="forget">Forget key on this device</button>
+      <span class="spacer"></span>
+      <button class="btn" type="submit">Save key</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+"use strict";
+
+/* The API's address is in the code; the keys never are. The address is a
+   public URL visible in the page source whatever we do. The keys are the only
+   thing between the calendar and the internet, so they're typed once per
+   device and kept in that device's storage. A stored flightops.apiUrl still
+   wins if present - nothing sets it; it's for tests and emergencies. */
+const API_URL = "https://flightops-api.ryantholliday.workers.dev";
+
+const $ = id => document.getElementById(id);
+
+/* ---------- icons (inline, so nothing is fetched to draw them) ---------- */
+const ICONS = {
+  calendar: '<rect x="3" y="4.5" width="18" height="16.5" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M8 13.5h.01M12 13.5h.01M16 13.5h.01M8 17h.01M12 17h.01M16 17h.01"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  key: '<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/>',
+  left: '<path d="m15 18-6-6 6-6"/>',
+  right: '<path d="m9 18 6-6-6-6"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/>',
+  pencil: '<path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>'
+};
+const icon = name => '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + ICONS[name] + "</svg>";
+document.querySelectorAll("[data-icon]").forEach(s => { s.outerHTML = icon(s.dataset.icon); });
+
+/* Build an element: el("div", { class: "x", onclick: f }, child, "text", ...) */
+function el(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (k === "style" && typeof v === "object") {
+      for (const [p, x] of Object.entries(v)) if (x != null) e.style.setProperty(p.replace(/[A-Z]/g, c => "-" + c.toLowerCase()), x);
+    }
+    else if (k === "html") e.innerHTML = v;
+    else e.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of kids.flat()) if (c != null && c !== false) e.append(c);
+  return e;
+}
+
+/* ---------- storage (localStorage with in-memory fallback) ---------- */
+const store = (() => {
+  const mem = {};
+  let ok = false;
+  try { localStorage.setItem("__t", "1"); localStorage.removeItem("__t"); ok = true; } catch (_) {}
+  return {
+    get(k, d) {
+      try { const v = ok ? localStorage.getItem(k) : mem[k]; return v == null ? d : JSON.parse(v); }
+      catch (_) { return d; }
+    },
+    set(k, v) { try { const s = JSON.stringify(v); if (ok) localStorage.setItem(k, s); else mem[k] = s; } catch (_) {} },
+    del(k) { try { if (ok) localStorage.removeItem(k); else delete mem[k]; } catch (_) {} }
+  };
+})();
+
+const K_KEY = "flightops.key";
+const K_CAL = "flightops.calendar";   // last calendar seen, so the page opens instantly and works with no signal
+const K_VIEW = "flightops.view";      // month or list, per device
+
+const apiUrl = () => (String(store.get("flightops.apiUrl", "") || "") || API_URL).replace(/\/+$/, "");
+
+/* ---------- time ----------
+   Every time is South Africa local (SAST, UTC+2 all year) written as
+   "YYYY-MM-DDTHH:mm". Internally those are read as if they were UTC, so the
+   browser's own zone never enters into it: a phone set to London shows the
+   same 06:30 as one in Cape Town. */
+const DAY = 86400000;
+const pad = n => String(n).padStart(2, "0");
+const dateKey = d => d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate());
+const at = v => new Date((v.length === 10 ? v + "T00:00" : v) + ":00Z");
+const addDays = (d, n) => new Date(d.getTime() + n * DAY);
+const nowSast = () => new Date(Date.now() + 2 * 3600000);
+const monthOf = d => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
+const F = opts => new Intl.DateTimeFormat("en-ZA", { ...opts, timeZone: "UTC" });
+const F_TIME = F({ hour: "2-digit", minute: "2-digit", hour12: false });
+const F_MONTH = F({ month: "long", year: "numeric" });
+const F_MON = F({ month: "short" });
+const F_WD = F({ weekday: "short" });
+const fmtTime = v => F_TIME.format(at(v));
+// Built by hand: en-ZA pads some days ("01 Oct") and not others ("29 Sept").
+const fmtDate = v => { const d = at(v); return d.getUTCDate() + " " + F_MON.format(d) + " " + d.getUTCFullYear(); };
+const fmtDayMon = v => { const d = at(v); return F_WD.format(d) + " " + d.getUTCDate() + " " + F_MON.format(d); };
+const sameDay = (a, b) => a.slice(0, 10) === b.slice(0, 10);
+function duration(b) {
+  const mins = Math.round((at(b.end) - at(b.start)) / 60000);
+  const d = Math.floor(mins / 1440), h = Math.floor(mins % 1440 / 60), m = mins % 60;
+  return [d && d + "d", h && h + "h", m && m + "m"].filter(Boolean).join(" ") || "0m";
+}
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+/* ---------- state ---------- */
+let key = String(store.get(K_KEY, "") || "");
+let cal = store.get(K_CAL, null);           // { pilots, types, bookings, role, updated }
+let month = monthOf(nowSast());
+let view = store.get(K_VIEW, null) || (window.innerWidth < 700 ? "list" : "month");
+let selected = null;                         // booking in the detail dialog
+let editing = null;                          // booking in the editor, null when adding
+let calWidth = 0;
+
+const canEdit = () => !!(cal && cal.role === "edit");
+const typeOf = b => cal.types.find(t => t.id === b.typeId);
+const pilotName = id => (cal.pilots.find(p => p.id === id) || {}).name || "Unknown pilot";
+const isMaint = typeId => { const t = cal && cal.types.find(x => x.id === typeId); return !!t && t.name.trim().toLowerCase() === "maintenance"; };
+function pilotSummary(b) {
+  const names = [b.pilot1Id, b.pilot2Id].filter(Boolean).map(pilotName);
+  return names.length ? names.join(" · ") : isMaint(b.typeId) ? "No pilots required" : "Pilots unassigned";
+}
+function span(b) {
+  return sameDay(b.start, b.end)
+    ? fmtDate(b.start) + ", " + fmtTime(b.start) + " → " + fmtTime(b.end)
+    : fmtDate(b.start) + " " + fmtTime(b.start) + " → " + fmtDate(b.end) + " " + fmtTime(b.end);
+}
+
+/* ---------- API ---------- */
+class KeyRejected extends Error {}
+
+async function api(path, method, body, useKey) {
+  let r;
+  try {
+    r = await fetch(apiUrl() + path, {
+      method: method || "GET",
+      headers: { "X-API-Key": useKey || key, "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+      cache: "no-store"
+    });
+  } catch (_) {
+    throw new Error("couldn't reach the server - check your signal");
+  }
+  if (r.status === 401) throw new KeyRejected("that key wasn't accepted");
+  let data = null;
+  try { data = await r.json(); } catch (_) {}
+  if (!r.ok) throw new Error((data && data.error) || "the server answered " + r.status);
+  return data;
+}
+
+function take(data) {
+  cal = {
+    pilots: data.pilots || [], types: data.types || [], bookings: data.bookings || [],
+    role: data.role, updated: data.updated || 0
+  };
+  store.set(K_CAL, cal);
+  render();
+  if ($("manageDlg").open) renderManage();
+}
+
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+/* ---------- screens ---------- */
+function showGate(msg) {
+  $("gate").hidden = false;
+  $("app").hidden = true;
+  for (const id of ["openSettings", "openManage", "openNew"]) $(id).hidden = true;
+  $("gateMsg").textContent = msg || "";
+  $("gateKey").value = "";
+  setTimeout(() => $("gateKey").focus(), 0);
+}
+
+function showApp() {
+  $("gate").hidden = true;
+  $("app").hidden = false;
+  $("openSettings").hidden = false;
+  $("openManage").hidden = !canEdit();
+  $("openNew").hidden = !canEdit();
+}
+
+function setStatus(msg, isErr) {
+  $("status").textContent = msg || "";
+  $("status").classList.toggle("err", !!isErr);
+}
+
+/* ---------- month grid layout ----------
+   Each week row is a 7-day timeline. A booking gets a thin bar spanning its
+   exact times, and a fixed-width card centred under the bar with its
+   details. Bars and cards are each packed into lanes so nothing overlaps;
+   the row grows to fit however many lanes the week needs. */
+function layoutWeek(bookings, weekStart, cardDays, minBarDays) {
+  const begin = weekStart.getTime(), end = begin + 7 * DAY;
+  const segs = bookings
+    .filter(b => at(b.start).getTime() < end && at(b.end).getTime() > begin)
+    .map(b => {
+      const left = (Math.max(begin, at(b.start).getTime()) - begin) / DAY;
+      const right = (Math.min(end, at(b.end).getTime()) - begin) / DAY;
+      const cardLeft = Math.max(0, Math.min(7 - cardDays, (left + right - cardDays) / 2));
+      const barLeft = Math.min(left, 7 - minBarDays);
+      return { b, left, right, barLeft, barRight: Math.max(right, barLeft + minBarDays), cardLeft, barLane: 0, cardLane: 0 };
+    });
+  const barEnds = [];
+  for (const s of [...segs].sort((a, b) => a.barLeft - b.barLeft)) {
+    let lane = barEnds.findIndex(last => last <= s.barLeft);
+    if (lane < 0) lane = barEnds.length;
+    s.barLane = lane;
+    barEnds[lane] = s.barRight;
+  }
+  const cardEnds = [];
+  for (const s of [...segs].sort((a, b) => a.cardLeft - b.cardLeft || a.left - b.left)) {
+    let lane = cardEnds.findIndex(last => last <= s.cardLeft + 0.015);
+    if (lane < 0) lane = cardEnds.length;
+    s.cardLane = lane;
+    cardEnds[lane] = s.cardLeft + cardDays;
+  }
+  return { segs, barLanes: barEnds.length, cardLanes: cardEnds.length };
+}
+
+function bookingCard(b) {
+  const t = typeOf(b);
+  return el("button", {
+    type: "button", class: "card", style: { "--c": t ? t.color : null },
+    title: b.title + " · " + span(b) + " · " + pilotSummary(b),
+    "aria-label": "Open " + b.title + ", " + span(b) + ", " + pilotSummary(b),
+    onclick: e => { e.stopPropagation(); openDetail(b); }
+  },
+    el("strong", null, b.title),
+    el("span", null, fmtTime(b.start) + " → " + fmtTime(b.end) + (sameDay(b.start, b.end) ? "" : "  ·  " + duration(b))),
+    el("span", { class: "pilots" }, pilotSummary(b)));
+}
+
+function renderMonth() {
+  const calEl = $("calendar");
+  calWidth = calEl.clientWidth || 760;
+  const first = month;
+  const gridStart = addDays(first, -first.getUTCDay());
+  const next = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 1));
+  const gridEnd = addDays(next, (7 - next.getUTCDay()) % 7);
+  const weeks = Math.max(5, Math.round((gridEnd - gridStart) / (7 * DAY)));
+  const today = dateKey(nowSast());
+  const cardDays = Math.min(7, 264 * 7 / calWidth);
+  const minBarDays = 48 * 7 / calWidth;
+
+  const rows = [el("div", { class: "weekday-row" },
+    WEEKDAYS.map(d => el("div", null, el("span", { class: "wd-long" }, d), el("span", { class: "wd-short" }, d.slice(0, 3)))))];
+
+  for (let w = 0; w < weeks; w++) {
+    const weekStart = addDays(gridStart, w * 7);
+    const weekEnd = addDays(weekStart, 7);
+    const { segs, barLanes, cardLanes } = layoutWeek(cal.bookings, weekStart, cardDays, minBarDays);
+    const row = el("div", { class: "week", style: { minHeight: Math.max(126, 64 + barLanes * 44 + cardLanes * 76) + "px" } });
+
+    for (let i = 0; i < 7; i++) {
+      const day = addDays(weekStart, i);
+      const k = dateKey(day);
+      const label = (day.getUTCDate() === 1 || (w === 0 && i === 0) ? F_MON.format(day) + " " : "") + day.getUTCDate();
+      row.append(el("button", {
+        type: "button",
+        class: "day" + (day.getUTCMonth() !== first.getUTCMonth() ? " outside" : "") + (k === today ? " today" : "") + (canEdit() ? " can-add" : ""),
+        "aria-label": canEdit() ? "Add booking on " + fmtDate(k) : fmtDate(k),
+        tabindex: canEdit() ? null : "-1",
+        onclick: () => { if (canEdit()) openEditor(null, k); }
+      }, el("span", { class: "day-number" }, label), el("span", { class: "day-plus", "aria-hidden": "true" }, "+")));
+    }
+
+    const layer = el("div", { class: "events" });
+    for (const s of segs) {
+      const t = typeOf(s.b);
+      const compact = (s.barRight - s.barLeft) * calWidth / 7 < 110;
+      layer.append(el("div", {
+        class: "bar" + (compact ? " compact" : ""), "aria-hidden": "true",
+        style: { "--c": t ? t.color : null, left: s.barLeft / 7 * 100 + "%", width: (s.barRight - s.barLeft) / 7 * 100 + "%", top: s.barLane * 44 + "px" }
+      },
+        at(s.b.start) >= weekStart ? el("span", { class: "t-start" }, fmtTime(s.b.start)) : null,
+        at(s.b.end) <= weekEnd ? el("span", { class: "t-end" }, fmtTime(s.b.end)) : null));
+      const card = bookingCard(s.b);
+      card.style.left = "clamp(0px, calc(" + (s.left + s.right) / 14 * 100 + "% - 127px), calc(100% - 264px))";
+      card.style.top = barLanes * 44 + 8 + s.cardLane * 76 + "px";
+      layer.append(card);
+    }
+    row.append(layer);
+    rows.push(row);
+  }
+  calEl.replaceChildren(...rows);
+}
+
+/* The list view: the month's bookings by the day they start. A booking that
+   began last month is listed on the 1st, since that's where it's still on. */
+function renderList() {
+  const first = month;
+  const next = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 1));
+  const from = dateKey(first) + "T00:00", to = dateKey(next) + "T00:00";
+  const today = dateKey(nowSast());
+  const groups = new Map();
+  for (const b of cal.bookings) {
+    if (!(b.start < to && b.end > from)) continue;
+    const k = b.start < from ? dateKey(first) : b.start.slice(0, 10);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(b);
+  }
+  const days = [...groups.keys()].sort();
+  if (!days.length) {
+    $("listView").replaceChildren(el("p", { class: "empty" }, "No bookings in " + F_MONTH.format(first) + "."));
+    return;
+  }
+  $("listView").replaceChildren(...days.map(k => el("div", { class: "agenda-day" + (k === today ? " today" : "") },
+    el("div", { class: "agenda-date" }, F_WD.format(at(k)), el("b", null, String(Number(k.slice(8))))),
+    el("div", { class: "agenda-items" }, groups.get(k).map(b => {
+      const c = bookingCard(b);
+      if (!sameDay(b.start, b.end)) c.children[1].textContent = fmtDayMon(b.start) + " " + fmtTime(b.start) + " → " + fmtDayMon(b.end) + " " + fmtTime(b.end);
+      return c;
+    })))));
+}
+
+function render() {
+  if (!cal) return;
+  showApp();
+  $("monthLabel").textContent = F_MONTH.format(month);
+  document.querySelectorAll("[data-view]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
+  $("monthView").hidden = view !== "month";
+  $("listView").hidden = view !== "list";
+  if (view === "month") renderMonth(); else renderList();
+
+  $("legend").replaceChildren(
+    ...cal.types.map(t => el("span", null, el("i", { class: "swatch", style: { background: t.color } }), t.name)),
+    ...(view === "month" ? [el("span", null, el("i", { class: "swatch night" }), "Night 18:00–06:00")] : []));
+  $("hint").textContent = canEdit()
+    ? (view === "month" ? "Click a date to add a booking · " : "") + "Click a booking to view or edit"
+    : "Click a booking for details · view-only key";
+}
+
+/* Cards are positioned in pixels against the grid's width, so lay the month
+   out again when that changes. */
+new ResizeObserver(() => {
+  if (view === "month" && cal && Math.abs(($("calendar").clientWidth || 0) - calWidth) > 1) renderMonth();
+}).observe($("calendar"));
+
+/* ---------- loading ---------- */
+const when = ms => new Date(ms).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+
+async function refresh() {
+  if (!key) return showGate();
+  if (cal) render(); else { showApp(); setStatus("Loading…"); }
+  try {
+    take(await api("/calendar"));
+    setStatus("");
+  } catch (e) {
+    if (e instanceof KeyRejected) {
+      forget();
+      return showGate("That key no longer works. Ask for the current one.");
+    }
+    if (cal) setStatus("Offline - showing the calendar as it was at " + when(cal.updated || Date.now()) + ".", true);
+    else setStatus("Couldn't load the calendar: " + e.message + ".", true);
+  }
+}
+
+function forget() {
+  key = "";
+  cal = null;
+  store.del(K_KEY);
+  store.del(K_CAL);
+}
+
+/* ---------- navigation ---------- */
+function shift(n) { month = new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth() + n, 1)); render(); }
+$("prev").addEventListener("click", () => shift(-1));
+$("next").addEventListener("click", () => shift(1));
+$("today").addEventListener("click", () => { month = monthOf(nowSast()); render(); });
+document.querySelectorAll("[data-view]").forEach(b => b.addEventListener("click", () => {
+  view = b.dataset.view;
+  store.set(K_VIEW, view);
+  render();
+}));
+document.addEventListener("keydown", e => {
+  if (document.querySelector("dialog[open]") || $("app").hidden || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+  if (e.key === "ArrowLeft") shift(-1);
+  if (e.key === "ArrowRight") shift(1);
+});
+
+/* ---------- key entry & settings ---------- */
+async function tryKey(k, msgEl) {
+  k = k.trim();
+  if (!k) { msgEl.textContent = "Type the key first."; return false; }
+  msgEl.textContent = "";
+  try {
+    const data = await api("/calendar", "GET", null, k);
+    key = k;
+    store.set(K_KEY, key);
+    take(data);
+    setStatus("");
+    return true;
+  } catch (e) {
+    msgEl.textContent = e instanceof KeyRejected ? "That key wasn't accepted." : "Couldn't check the key: " + e.message + ".";
+    return false;
+  }
+}
+
+$("gateForm").addEventListener("submit", e => { e.preventDefault(); tryKey($("gateKey").value, $("gateMsg")); });
+
+$("openSettings").addEventListener("click", () => {
+  $("access").innerHTML = canEdit()
+    ? "This device has the <b>edit key</b>: it can add, change and remove bookings and lists."
+    : "This device has the <b>view key</b>: it can see the schedule but not change it.";
+  $("newKey").value = "";
+  $("keyMsg").textContent = "";
+  $("settings").showModal();
+});
+$("keyForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (await tryKey($("newKey").value, $("keyMsg"))) $("settings").close();
+});
+$("forget").addEventListener("click", () => {
+  if (!confirm("Forget the key on this device? You'll need to enter it again to see the calendar.")) return;
+  forget();
+  $("settings").close();
+  showGate();
+});
+
+document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", () => b.closest("dialog").close()));
+
+/* ---------- booking details ---------- */
+function openDetail(b) {
+  selected = b;
+  const t = typeOf(b);
+  $("dTitle").textContent = b.title;
+  $("dType").replaceChildren(el("i", { class: "swatch", style: { background: t ? t.color : "#839ca3" } }), (t ? t.name : "Unknown mission type") + " · " + duration(b));
+  $("dStart").textContent = fmtDate(b.start) + " at " + fmtTime(b.start);
+  $("dEnd").textContent = fmtDate(b.end) + " at " + fmtTime(b.end);
+  $("dPilots").textContent = pilotSummary(b);
+  $("dNotes").textContent = b.notes || "";
+  $("dNotes").hidden = !b.notes;
+  $("dActions").hidden = !canEdit();
+  $("dMsg").textContent = "";
+  $("detail").showModal();
+}
+
+$("dEdit").addEventListener("click", () => { $("detail").close(); openEditor(selected); });
+$("dDelete").addEventListener("click", async () => {
+  if (!selected || !confirm("Delete " + selected.title + " (" + span(selected) + ")?")) return;
+  $("dDelete").disabled = true;
+  try {
+    take(await api("/bookings/" + encodeURIComponent(selected.id), "DELETE"));
+    $("detail").close();
+  } catch (e) {
+    $("dMsg").textContent = "Not deleted: " + e.message + ".";
+  } finally {
+    $("dDelete").disabled = false;
+  }
+});
+
+/* ---------- new / edit booking ---------- */
+function fillSelect(sel, items, blank, value) {
+  sel.replaceChildren(el("option", { value: "" }, blank), ...items.map(x => el("option", { value: x.id }, x.name)));
+  sel.value = value || "";
+}
+
+function syncPilots() {
+  const maint = isMaint($("fType").value);
+  const p1 = $("fP1").value, p2 = $("fP2").value;
+  fillSelect($("fP1"), cal.pilots, maint ? "No pilot" : "Choose pilot", p1);
+  fillSelect($("fP2"), cal.pilots, maint ? "No pilot" : "Choose pilot", p2);
+  // Each list greys out the pilot already picked in the other.
+  [...$("fP1").options].forEach(o => { o.disabled = !!o.value && o.value === p2; });
+  [...$("fP2").options].forEach(o => { o.disabled = !!o.value && o.value === p1; });
+  document.querySelectorAll("[data-opt]").forEach(s => { s.hidden = !maint; });
+  checkClash();
+}
+
+/* A pilot already flying something that overlaps is worth knowing about, but
+   it's not refused: a short crew change inside a long standby is normal. */
+function checkClash() {
+  const start = $("fStart").value, end = $("fEnd").value;
+  const notes = [];
+  if (!isMaint($("fType").value) && cal.pilots.length < 2)
+    notes.push("Add at least two pilots in Manage lists first. Maintenance can be saved without pilots.");
+  if (start && end && end > start) {
+    for (const pid of [$("fP1").value, $("fP2").value].filter(Boolean)) {
+      const other = cal.bookings.find(b => (!editing || b.id !== editing.id) && b.start < end && b.end > start && (b.pilot1Id === pid || b.pilot2Id === pid));
+      if (other) notes.push(pilotName(pid) + " is also on " + other.title + " (" + span(other) + ").");
+    }
+  }
+  $("fNote").textContent = notes.join(" ");
+}
+
+function openEditor(b, day) {
+  editing = b;
+  if (!day) {
+    const today = dateKey(nowSast());
+    day = monthOf(at(today)).getTime() === month.getTime() ? today : dateKey(month);
+  }
+  $("eTitle").textContent = b ? "Edit booking" : "New booking";
+  $("fSave").textContent = b ? "Save changes" : "Add booking";
+  fillSelect($("fType"), cal.types, "Choose a mission type", b ? b.typeId : "");
+  $("fStart").value = b ? b.start : day + "T08:00";
+  $("fEnd").value = b ? b.end : day + "T09:00";
+  $("fP1").value = ""; $("fP2").value = "";
+  fillSelect($("fP1"), cal.pilots, "", b ? b.pilot1Id : "");
+  fillSelect($("fP2"), cal.pilots, "", b ? b.pilot2Id : "");
+  $("fName").value = b && typeOf(b) && b.title === typeOf(b).name ? "" : (b ? b.title : "");
+  $("fNotes").value = b ? b.notes : "";
+  $("fMsg").textContent = "";
+  syncPilots();
+  $("editor").showModal();
+}
+
+$("fType").addEventListener("change", syncPilots);
+$("fP1").addEventListener("change", syncPilots);
+$("fP2").addEventListener("change", syncPilots);
+$("fStart").addEventListener("change", () => {
+  // Moving the start keeps the length the same, as calendars usually do.
+  const s = $("fStart").value, e = $("fEnd").value;
+  if (s && e && e <= s) {
+    const len = editing ? at(editing.end) - at(editing.start) : 3600000;
+    $("fEnd").value = new Date(at(s).getTime() + len).toISOString().slice(0, 16);
+  }
+  checkClash();
+});
+$("fEnd").addEventListener("change", checkClash);
+
+$("bookingForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const body = {
+    typeId: $("fType").value, start: $("fStart").value, end: $("fEnd").value,
+    pilot1Id: $("fP1").value, pilot2Id: $("fP2").value,
+    title: $("fName").value.trim(), notes: $("fNotes").value.trim()
+  };
+  const msg = $("fMsg");
+  if (!body.typeId) return void (msg.textContent = "Choose a mission type.");
+  if (!body.start || !body.end) return void (msg.textContent = "Enter a start and an end.");
+  if (body.end <= body.start) return void (msg.textContent = "The end must be later than the start.");
+  if (body.pilot1Id && body.pilot1Id === body.pilot2Id) return void (msg.textContent = "The two pilots must be different people.");
+  if (!isMaint(body.typeId) && (!body.pilot1Id || !body.pilot2Id)) return void (msg.textContent = "Choose two pilots. Only Maintenance can go without.");
+
+  const id = editing ? editing.id : newId();
+  $("fSave").disabled = true;
+  msg.textContent = "";
+  try {
+    take(await api("/bookings/" + encodeURIComponent(id), "PUT", body));
+    $("editor").close();
+    month = monthOf(at(body.start));   // show where it landed
+    render();
+  } catch (err) {
+    msg.textContent = "Not saved: " + err.message + ".";
+  } finally {
+    $("fSave").disabled = false;
+  }
+});
+
+/* ---------- pilots & mission types ---------- */
+let rowEdit = null;   // { kind, id } being renamed
+
+function renderManage() {
+  const used = id => cal.bookings.filter(b => b.pilot1Id === id || b.pilot2Id === id || b.typeId === id).length;
+
+  function item(kind, x) {
+    const label = kind === "types"
+      ? el("span", null, el("i", { class: "swatch", style: { background: x.color } }), x.name)
+      : el("span", null, x.name);
+    if (rowEdit && rowEdit.kind === kind && rowEdit.id === x.id) {
+      const name = el("input", { type: "text", value: x.name, maxlength: "60", "aria-label": "Rename " + x.name });
+      const color = kind === "types" ? el("input", { type: "color", value: x.color, "aria-label": "Colour for " + x.name }) : null;
+      const form = el("form", { onsubmit: ev => { ev.preventDefault(); saveItem(kind, x.id, name.value, color && color.value); } },
+        color, name,
+        el("button", { class: "btn small", type: "submit" }, "Save"),
+        el("button", { class: "btn small plain", type: "button", onclick: () => { rowEdit = null; renderManage(); } }, "Cancel"));
+      setTimeout(() => name.focus(), 0);
+      return el("li", null, form);
+    }
+    const n = used(x.id);
+    return el("li", null, label, el("span", { class: "tools" },
+      el("button", { class: "btn small plain icon", type: "button", title: "Edit " + x.name, "aria-label": "Edit " + x.name, html: icon("pencil"),
+        onclick: () => { rowEdit = { kind, id: x.id }; $("mMsg").textContent = ""; renderManage(); } }),
+      el("button", { class: "btn small plain icon", type: "button", html: icon("trash"),
+        title: n ? "On " + n + " booking" + (n === 1 ? "" : "s") + " - can't remove" : "Remove " + x.name,
+        "aria-label": "Remove " + x.name, disabled: n > 0,
+        onclick: () => removeItem(kind, x) })));
+  }
+
+  $("pilotList").replaceChildren(...(cal.pilots.length ? cal.pilots.map(p => item("pilots", p)) : [el("li", { class: "empty-row" }, el("span", { class: "optional" }, "No pilots yet."))]));
+  $("typeList").replaceChildren(...cal.types.map(t => item("types", t)));
+}
+
+async function saveItem(kind, id, name, color) {
+  name = (name || "").trim();
+  if (!name) return void ($("mMsg").textContent = "Enter a name.");
+  $("mMsg").textContent = "";
+  try {
+    take(await api("/" + kind + "/" + encodeURIComponent(id), "PUT", kind === "types" ? { name, color } : { name }));
+    rowEdit = null;
+    renderManage();
+    return true;
+  } catch (e) {
+    $("mMsg").textContent = "Not saved: " + e.message + ".";
+    return false;
+  }
+}
+
+async function removeItem(kind, x) {
+  if (!confirm("Remove " + x.name + "?")) return;
+  try { take(await api("/" + kind + "/" + encodeURIComponent(x.id), "DELETE")); }
+  catch (e) { $("mMsg").textContent = "Not removed: " + e.message + "."; }
+}
+
+$("openManage").addEventListener("click", () => {
+  rowEdit = null;
+  $("mMsg").textContent = "";
+  renderManage();
+  $("manageDlg").showModal();
+});
+$("addPilot").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (await saveItem("pilots", newId(), $("newPilot").value)) $("newPilot").value = "";
+});
+$("addType").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (await saveItem("types", newId(), $("newType").value, $("newColor").value)) $("newType").value = "";
+});
+
+$("openNew").addEventListener("click", () => openEditor(null));
+
+/* ---------- start ----------
+   A tab left open on someone's desk keeps checking: every minute while it's
+   visible, and straight away when it's looked at again. */
+refresh();
+setInterval(() => { if (!document.hidden && key && !document.querySelector("dialog[open]")) refresh(); }, 60000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden && key) refresh(); });
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
