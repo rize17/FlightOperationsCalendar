@@ -52,7 +52,9 @@ No build step and no package manager.
    `rize17/FlightOperationsCalendar`, root directory `/` (or `worker`). The
    name must be `flightops-api`, so that it is served at
    `https://flightops-api.ryantholliday.workers.dev` (the address
-   `index.html` calls). A push then deploys it.
+   `index.html` calls). Build command: none. Deploy command:
+   `npx wrangler deploy`. Preview command: `npx wrangler versions upload`.
+   Connecting doesn't build anything; the next push to `main` deploys it.
 3. **Keys**: the worker → Settings → Variables and Secrets → add the
    **Secret** `EDIT_KEY`, and optionally `VIEW_KEY`. Make them different.
    Never put them in the repo.
