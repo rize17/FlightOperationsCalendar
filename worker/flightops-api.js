@@ -9,6 +9,10 @@
  *                pilots and mission types. Ops use this one.
  *   view key   — optional. Read only, for crew who just need to see the
  *                schedule. Leave VIEW_KEY unset and only the edit key works.
+ *
+ * The Offshore Tools keys work here too, so one key opens every tool:
+ * OFFSHORE_ADMIN_KEY gets edit, OFFSHORE_VIEW_KEY gets view. Both are
+ * optional, and set to the same values as the offshoretools-api worker.
  * The header rather than the query string keeps keys out of Cloudflare's
  * request logs and out of browser history.
  *
@@ -16,6 +20,7 @@
  *   FLIGHTOPS  KV namespace (from wrangler.toml)
  *   EDIT_KEY   secret, set in the dashboard (required)
  *   VIEW_KEY   secret, set in the dashboard (optional)
+ *   OFFSHORE_ADMIN_KEY, OFFSHORE_VIEW_KEY   secrets (optional)
  *
  * Every write names one record and the worker merges it into the stored
  * calendar. There is no endpoint that replaces the whole calendar, so a tab
@@ -159,6 +164,8 @@ export default {
         "KV bound:    " + (kv ? "yes" : "NO - bind the namespace as FLIGHTOPS") + "\n" +
         "edit key:    " + (k.edit ? "set" : "NOT SET - add the EDIT_KEY secret") + "\n" +
         "view key:    " + (k.view ? "set" : "not set (optional - only the edit key works)") + "\n" +
+        "offshore:    " + (env.OFFSHORE_ADMIN_KEY ? "admin key set" : "admin key not set") + ", " +
+                          (env.OFFSHORE_VIEW_KEY ? "view key set" : "view key not set") + " (optional)\n" +
         "holding:     " + held + "\n",
         { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", ...CORS } });
     }
@@ -170,7 +177,10 @@ export default {
     if (!k.edit) return json({ error: "the edit key isn't configured on the worker" }, 503);
 
     const given = req.headers.get("X-API-Key") || "";
-    const role = sameKey(given, k.edit) ? "edit" : sameKey(given, k.view) ? "view" : null;
+    // An empty key never matches, even against an empty or unset secret.
+    const role = !given ? null
+      : sameKey(given, k.edit) || sameKey(given, env.OFFSHORE_ADMIN_KEY) ? "edit"
+      : sameKey(given, k.view) || sameKey(given, env.OFFSHORE_VIEW_KEY) ? "view" : null;
     if (!role) return json({ error: "bad or missing key" }, 401);
 
     const reply = cal => json({ ...cal, role });

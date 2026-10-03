@@ -18,6 +18,10 @@ typed once per device and remembered: there's no login and no timeout.
 
 ⚙️ Settings changes the key or forgets it on that device.
 
+The Offshore Tools keys work here too: its admin key gets edit, its viewing
+key gets view. If Offshore Tools is unlocked on the device, the calendar
+opens without asking for a key.
+
 ## Rules the calendar keeps
 
 - Every booking needs a mission type and an end later than its start.
@@ -59,7 +63,9 @@ No build step and no package manager.
    Connecting doesn't build anything; the next push to `main` deploys it.
 3. **Keys**: the worker → Settings → Variables and Secrets → add the
    **Secret** `EDIT_KEY`, and optionally `VIEW_KEY`. Make them different.
-   Never put them in the repo.
+   Never put them in the repo. To share keys with Offshore Tools, also add
+   `OFFSHORE_ADMIN_KEY` and `OFFSHORE_VIEW_KEY` with the same values as the
+   `ADMIN_KEY` and `VIEW_KEY` secrets on the offshoretools-api worker.
 4. **Check**: open `https://flightops-api.ryantholliday.workers.dev/health`.
    It should say KV bound: yes, and the edit key set.
 
@@ -74,4 +80,4 @@ branch*, root). `.nojekyll` keeps the files out of Jekyll.
 Bump the version on every functional change, in all four places at once: the
 `<title>`, the `.version` span, `CACHE` in `sw.js`, and *Current* below.
 
-Current: **v1.1**.
+Current: **v1.2**.

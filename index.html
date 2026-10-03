@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Flight Operations v1.1</title>
+<title>Flight Operations v1.2</title>
 
 <!-- Add-to-Home-Screen support -->
 <link rel="manifest" href="manifest.webmanifest">
@@ -281,7 +281,7 @@
 <header class="topbar">
   <div class="brand">
     <span class="brand-mark"><span data-icon="calendar"></span></span>
-    <div><strong>Flight Operations</strong><small>Calendar<span class="version">v1.1</span></small></div>
+    <div><strong>Flight Operations</strong><small>Calendar<span class="version">v1.2</span></small></div>
   </div>
   <div class="header-right">
     <span class="timezone">Times shown in SAST (UTC+2)</span>
@@ -747,8 +747,28 @@ new ResizeObserver(() => {
 /* ---------- loading ---------- */
 const when = ms => new Date(ms).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
 
+/* Offshore Tools (rize17.github.io/OffShoreTools) is on the same origin, so
+   its saved key is readable here. With no key of our own, or one that has
+   stopped working, that key is tried before the key screen - the worker
+   accepts the Offshore Tools keys - so opening the calendar from Offshore
+   Tools needs no second key. Opened on its own, nothing changes. */
+async function adoptShared() {
+  const shared = String(store.get("offshoretools.key", "") || "").trim();
+  if (!shared || shared === key) return false;
+  try {
+    const data = await api("/calendar", "GET", null, shared);
+    key = shared;
+    store.set(K_KEY, key);
+    take(data);
+    setStatus("");
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 async function refresh() {
-  if (!key) return showGate();
+  if (!key) return (await adoptShared()) || showGate();
   if (cal) render(); else { showApp(); setStatus("Loading…"); }
   try {
     take(await api("/calendar"));
@@ -756,6 +776,7 @@ async function refresh() {
   } catch (e) {
     if (e instanceof KeyRejected) {
       forget();
+      if (await adoptShared()) return;
       return showGate("That key no longer works. Ask for the current one.");
     }
     if (cal) setStatus("Offline - showing the calendar as it was at " + when(cal.updated || Date.now()) + ".", true);
@@ -819,7 +840,7 @@ $("keyForm").addEventListener("submit", async e => {
   if (await tryKey($("newKey").value, $("keyMsg"))) $("settings").close();
 });
 $("forget").addEventListener("click", () => {
-  if (!confirm("Forget the key on this device? You'll need to enter it again to see the calendar.")) return;
+  if (!confirm("Forget the key on this device? You'll need to enter it again to see the calendar (unless Offshore Tools is unlocked on this device - its key is used next time).")) return;
   forget();
   $("settings").close();
   showGate();

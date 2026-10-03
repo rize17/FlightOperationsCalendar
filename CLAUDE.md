@@ -25,6 +25,13 @@ is deployed separately by Workers Builds from the same repo.
 - **The key is remembered, never expired.** It's in localStorage until the
   person chooses *Forget key* or the key stops working (401). Don't add
   timeouts or sessions: avoiding logging in is the reason this isn't a login.
+- **The Offshore Tools keys work here too.** The worker also accepts the
+  optional secrets `OFFSHORE_ADMIN_KEY` (edit) and `OFFSHORE_VIEW_KEY` (view),
+  set to the same values as the offshoretools-api worker's keys. Offshore
+  Tools is on the same origin (`rize17.github.io`), so with no key of its own,
+  or one that's stopped working, the page tries `offshoretools.key` from
+  localStorage (`adoptShared()`) before showing the key screen. Opening the
+  calendar from Offshore Tools therefore needs no second key.
 - **Every write names one record.** `PUT`/`DELETE` on `/bookings/<id>`,
   `/pilots/<id>` or `/types/<id>`; the worker merges it into the stored
   calendar and returns the whole calendar. There is no endpoint that replaces
