@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Flight Operations v1.2</title>
+<title>Flight Operations v1.3</title>
 
 <!-- Add-to-Home-Screen support -->
 <link rel="manifest" href="manifest.webmanifest">
@@ -281,7 +281,7 @@
 <header class="topbar">
   <div class="brand">
     <span class="brand-mark"><span data-icon="calendar"></span></span>
-    <div><strong>Flight Operations</strong><small>Calendar<span class="version">v1.2</span></small></div>
+    <div><strong>Flight Operations</strong><small>Calendar<span class="version">v1.3</span></small></div>
   </div>
   <div class="header-right">
     <span class="timezone">Times shown in SAST (UTC+2)</span>
@@ -516,7 +516,7 @@ const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frida
 let key = String(store.get(K_KEY, "") || "");
 let cal = store.get(K_CAL, null);           // { pilots, types, bookings, role, updated }
 let month = monthOf(nowSast());
-let view = store.get(K_VIEW, null) || (window.innerWidth < 700 ? "list" : "month");
+let view = store.get(K_VIEW, null) || "month";   // month unless this device has picked List
 let selected = null;                         // booking in the detail dialog
 let editing = null;                          // booking in the editor, null when adding
 let calWidth = 0;

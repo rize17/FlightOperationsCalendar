@@ -3,8 +3,9 @@
 A shared month calendar of flight operations: each booking has a mission type
 (with its own colour), up to two pilots, start and end times, and notes. Each day is
 drawn as a 24-hour strip with the night hours (18:00–06:00) shaded, so a
-booking's bar shows its exact times across midnight and across days. On a
-phone the **List** view shows the month as a list of bookings by day.
+booking's bar shows its exact times across midnight and across days. It opens on the
+month grid; **List** shows the month as a list of bookings by day, which
+suits a phone, and each device remembers which one it was last on.
 
 All times are South Africa time (SAST, UTC+2), whatever zone the device is in.
 
@@ -80,4 +81,4 @@ branch*, root). `.nojekyll` keeps the files out of Jekyll.
 Bump the version on every functional change, in all four places at once: the
 `<title>`, the `.version` span, `CACHE` in `sw.js`, and *Current* below.
 
-Current: **v1.2**.
+Current: **v1.3**.
